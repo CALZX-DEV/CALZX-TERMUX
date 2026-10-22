@@ -1,0 +1,94 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -u
+CONFIG_FILE="${HOME}/.config/calzx-termux/config"
+[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+
+CALZX_TITLE="${CALZX_TITLE:-CALZX}"
+CALZX_SUBTITLE="${CALZX_SUBTITLE:-NEON HACKER TERMINAL}"
+CALZX_GREETING="${CALZX_GREETING:-Welcome back, CALZX!}"
+CALZX_SHOW_INFO="${CALZX_SHOW_INFO:-true}"
+CALZX_RAINBOW="${CALZX_RAINBOW:-true}"
+CALZX_SHOW_TIPS="${CALZX_SHOW_TIPS:-true}"
+
+if [[ -t 1 && "${TERM:-dumb}" != "dumb" && -z "${NO_COLOR:-}" ]]; then
+  colors=(196 202 208 226 154 46 51 39 93 201)
+  color() { printf '\033[38;5;%sm' "$1"; }
+  reset=$'\033[0m'
+else
+  colors=()
+  color() { :; }
+  reset=''
+fi
+
+term_width="${COLUMNS:-$(tput cols 2>/dev/null || echo 60)}"
+[[ "$term_width" =~ ^[0-9]+$ ]] || term_width=60
+(( term_width > 78 )) && term_width=78
+(( term_width < 38 )) && term_width=38
+inner=$((term_width - 4))
+line="$(printf '%*s' "$inner" '' | tr ' ' '─')"
+
+printf '\n'
+color 51; printf '  ╭%s╮\n' "$line"; printf '%s' "$reset"
+color 51; printf '  │'; color 201; printf '  CALZX TERMUX'; color 51
+printf '%*s' "$((inner - 14))" ''; printf '│\n'; printf '%s' "$reset"
+color 51; printf '  ╰%s╯\n\n' "$line"; printf '%s' "$reset"
+
+if command -v figlet >/dev/null 2>&1; then
+  banner="$(figlet -w "$term_width" "$CALZX_TITLE" 2>/dev/null || true)"
+else
+  banner=""
+fi
+
+if [[ -n "$banner" ]]; then
+  if [[ "$CALZX_RAINBOW" == "true" && ${#colors[@]} -gt 0 ]]; then
+    while IFS= read -r row; do
+      idx=0
+      while IFS= read -r -n1 ch || [[ -n "$ch" ]]; do
+        if [[ "$ch" == " " ]]; then
+          printf ' '
+        else
+          color "${colors[$((idx % ${#colors[@]}))]}"
+          printf '%s' "$ch"
+          printf '%s' "$reset"
+          ((idx+=1))
+        fi
+      done <<< "$row"
+      printf '\n'
+    done <<< "$banner"
+  else
+    printf '%s\n' "$banner"
+  fi
+else
+  color 196; printf '       ╔════════════════════════════════╗\n'
+  color 51;  printf '       ║ %-30.30s ║\n' "$CALZX_TITLE"
+  color 201; printf '       ╚════════════════════════════════╝\n'
+  printf '%s' "$reset"
+  printf '  (Pasang figlet untuk banner ASCII yang lebih besar: pkg install figlet)\n'
+fi
+
+printf '\n'
+color 51; printf '  ▸ %s\n' "$CALZX_SUBTITLE"; printf '%s' "$reset"
+color 46; printf '  ▸ %s\n' "$CALZX_GREETING"; printf '%s' "$reset"
+
+if [[ "$CALZX_SHOW_INFO" == "true" ]]; then
+  color 245
+  printf '\n  ┌─ SESSION INFO ─────────────────────────────\n'
+  printf '  │ USER   : %s\n' "${USER:-termux}"
+  printf '  │ DEVICE : %s\n' "$(getprop ro.product.model 2>/dev/null || echo Android)"
+  printf '  │ SHELL  : %s\n' "${SHELL##*/}"
+  printf '  │ PATH   : %s\n' "${PWD/#$HOME/~}"
+  printf '  │ TIME   : %s\n' "$(date '+%d %b %Y • %H:%M')"
+  printf '  └────────────────────────────────────────────\n'
+  printf '%s' "$reset"
+fi
+
+if [[ "$CALZX_SHOW_TIPS" == "true" ]]; then
+  color 93
+  printf '\n  TIP: calzx-config  → customize banner\n'
+  printf '       calzx-uninstall → remove theme\n'
+  printf '%s' "$reset"
+fi
+
+printf '\n'
+color 51; printf '  %s' 'calzx'; color 201; printf ' @ '; color 46; printf '%s' "${USER:-termux}"
+printf '%s' "$reset"; printf '  ~ $ '
