@@ -1,0 +1,13 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+config="${HOME}/.config/calzx-termux/config"
+if [[ ! -f "$config" ]]; then
+  echo "Konfigurasi belum ada. Jalankan installer terlebih dahulu."
+  exit 1
+fi
+if command -v nano >/dev/null 2>&1; then
+  exec nano "$config"
+else
+  echo "Pasang editor dengan: pkg install nano"
+  echo "Lokasi konfigurasi: $config"
+fi
